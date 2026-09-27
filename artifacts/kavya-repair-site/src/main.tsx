@@ -6,7 +6,7 @@ import { ErrorBoundary } from '@/components/error-boundary';
 
 import './index.css';
 
-setBaseUrl("http://localhost:5000");
+setBaseUrl("https://kavya-technologies-api.onrender.com");
 
 createRoot(document.getElementById('root')!, {
   // Keeps caught errors off reportError(), which would raise the dev overlay.
