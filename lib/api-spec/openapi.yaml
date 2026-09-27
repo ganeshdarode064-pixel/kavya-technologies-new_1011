@@ -1,0 +1,406 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Public and operations API for Kavya Technologies
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: public
+    description: Public business information
+  - name: enquiries
+    description: Customer repair and contact enquiries
+  - name: operations
+    description: Lightweight operations summaries
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /services:
+    get:
+      operationId: listServices
+      tags: [public]
+      summary: List active services
+      responses:
+        "200":
+          description: Active repair services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Service"
+  /reviews:
+    get:
+      operationId: listReviews
+      tags: [public]
+      summary: List approved customer reviews
+      responses:
+        "200":
+          description: Approved reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Review"
+  /repair-requests:
+    get:
+      operationId: listRepairRequests
+      tags: [enquiries]
+      summary: List repair requests
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/RepairStatus"
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 120
+      responses:
+        "200":
+          description: Repair requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RepairRequest"
+    post:
+      operationId: createRepairRequest
+      tags: [enquiries]
+      summary: Submit a repair request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RepairRequestInput"
+      responses:
+        "201":
+          description: Repair request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RepairRequest"
+        "400":
+          description: Invalid repair request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /repair-requests/{id}:
+    get:
+      operationId: getRepairRequest
+      tags: [enquiries]
+      summary: Get a repair request
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Repair request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RepairRequest"
+        "404":
+          description: Repair request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateRepairRequest
+      tags: [enquiries]
+      summary: Update a repair request status
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RepairRequestUpdate"
+      responses:
+        "200":
+          description: Updated repair request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RepairRequest"
+        "404":
+          description: Repair request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteRepairRequest
+      tags: [enquiries]
+      summary: Delete a repair request
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Repair request deleted
+        "404":
+          description: Repair request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /contact:
+    get:
+      operationId: listContactMessages
+      tags: [enquiries]
+      summary: List contact messages
+      responses:
+        "200":
+          description: Contact messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContactMessage"
+    post:
+      operationId: createContactMessage
+      tags: [enquiries]
+      summary: Submit a contact message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactMessageInput"
+      responses:
+        "201":
+          description: Contact message created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactMessage"
+        "400":
+          description: Invalid contact message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /operations/summary:
+    get:
+      operationId: getOperationsSummary
+      tags: [operations]
+      summary: Get repair operations summary
+      responses:
+        "200":
+          description: Request and message totals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationsSummary"
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    RepairStatus:
+      type: string
+      enum: [Pending, Contacted, "In Progress", Completed, Cancelled]
+    Service:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        active:
+          type: boolean
+      required: [id, title, description, icon, active]
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+        customerName:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        review:
+          type: string
+        date:
+          type: string
+        approved:
+          type: boolean
+      required: [id, customerName, rating, review, date, approved]
+    RepairRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        customerName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: ["string", "null"]
+        deviceType:
+          type: string
+        deviceModel:
+          type: ["string", "null"]
+        service:
+          type: string
+        problemDescription:
+          type: string
+        status:
+          $ref: "#/components/schemas/RepairStatus"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - customerName
+        - phone
+        - email
+        - deviceType
+        - deviceModel
+        - service
+        - problemDescription
+        - status
+        - createdAt
+        - updatedAt
+    RepairRequestInput:
+      type: object
+      properties:
+        customerName:
+          type: string
+          minLength: 2
+          maxLength: 120
+        phone:
+          type: string
+          minLength: 10
+          maxLength: 20
+        email:
+          type: ["string", "null"]
+          format: email
+        deviceType:
+          type: string
+          minLength: 2
+          maxLength: 80
+        deviceModel:
+          type: ["string", "null"]
+          maxLength: 120
+        service:
+          type: string
+          minLength: 2
+          maxLength: 120
+        problemDescription:
+          type: string
+          minLength: 10
+          maxLength: 2000
+      required: [customerName, phone, deviceType, service, problemDescription]
+    RepairRequestUpdate:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/RepairStatus"
+      required: [status]
+    ContactMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        message:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+      required: [id, name, phone, email, message, status, createdAt]
+    ContactMessageInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        phone:
+          type: ["string", "null"]
+          maxLength: 20
+        email:
+          type: ["string", "null"]
+          format: email
+        message:
+          type: string
+          minLength: 10
+          maxLength: 2000
+      required: [name, message]
+    OperationsSummary:
+      type: object
+      properties:
+        totalRepairRequests:
+          type: integer
+        pending:
+          type: integer
+        contacted:
+          type: integer
+        inProgress:
+          type: integer
+        completed:
+          type: integer
+        totalMessages:
+          type: integer
+      required:
+        - totalRepairRequests
+        - pending
+        - contacted
+        - inProgress
+        - completed
+        - totalMessages
